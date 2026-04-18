@@ -14,12 +14,12 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
     'https://peace-royal-resort.vercel.app',
-    'https://peace-royal-resort-s-projects.vercel.app' // Handles Vercel preview links
+    'https://peace-royal-resort-web.vercel.app',
+    'https://peace-royal-resort-s-projects.vercel.app'
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps) or if in the allowed list
         if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
             callback(null, true);
         } else {
@@ -34,7 +34,11 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health Check for Vercel
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'Peace Royal API is live', time: new Date() });
+    res.json({ 
+        status: 'Peace Royal API is live', 
+        env: process.env.NODE_ENV,
+        time: new Date() 
+    });
 });
 
 // Use the routes
@@ -45,10 +49,13 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-const port = process.env.PORT || 3001;
+// --- VERCEL FIX: Only listen if NOT running on Vercel ---
+if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 3001;
+    app.listen(port, () => {
+        console.log(`🚀 Peace Royal API running on http://localhost:${port}`);
+    });
+}
 
-app.listen(port, () => {
-    console.log(`🚀 Peace Royal API running on http://localhost:${port}`);
-});
-
+// Crucial for Vercel to treat this as a serverless function
 export default app;
