@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import { HOTEL_CONTACT } from '@/config/siteContent.js';
 
 const PaymentSuccess = () => {
   const location = useLocation();
@@ -13,6 +14,12 @@ const PaymentSuccess = () => {
 
   const booking = data?.booking;
   const order = data?.order;
+  const submissionMode =
+    data?.submissionMode ||
+    booking?.submissionMode ||
+    order?.submissionMode ||
+    'api';
+  const isLocalBackup = submissionMode === 'local_backup';
 
   const getDetails = () => {
     if (booking?.room_type) {
@@ -104,10 +111,12 @@ const PaymentSuccess = () => {
               </div>
 
               <h1 className="heading-font text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Booking received
+                {isLocalBackup ? 'Booking request saved' : 'Booking received'}
               </h1>
               <p className="text-lg text-muted-foreground mb-8">
-                Your {details.type.toLowerCase()} has been received. Our team will review it and contact you to confirm the next step.
+                {isLocalBackup
+                  ? `Your ${details.type.toLowerCase()} has been saved on this device. Please contact the hotel directly to confirm it while the live online booking connection is being completed.`
+                  : `Your ${details.type.toLowerCase()} has been received. Our team will review it and contact you to confirm the next step.`}
               </p>
 
               <div className="bg-card rounded-xl p-6 mb-8 text-left">
@@ -138,7 +147,11 @@ const PaymentSuccess = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>
-                    <span>Our team will contact you shortly to confirm arrangements and payment options</span>
+                    <span>
+                      {isLocalBackup
+                        ? `Call ${HOTEL_CONTACT.phoneDisplay} or email ${HOTEL_CONTACT.email} so the team can confirm this saved request manually`
+                        : 'Our team will contact you shortly to confirm arrangements and payment options'}
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>

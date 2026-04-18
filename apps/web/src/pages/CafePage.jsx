@@ -11,12 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import apiServerClient from '@/lib/apiServerClient';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import MediaSlideshow from '@/components/MediaSlideshow.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
+import { submitBookingRequest } from '@/lib/bookingSubmission.js';
 
 const CafePage = () => {
   const navigate = useNavigate();
@@ -111,21 +111,16 @@ const CafePage = () => {
         reserved_table_number: isFriday ? `T-${Math.floor(Math.random() * 20) + 1}` : ''
       };
 
-      const orderRes = await apiServerClient.fetch('/bookings/intake', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const submission = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
           bookingType: 'cafe',
           data: orderData,
-        }),
+        },
+        fallbackRecord: orderData,
       });
 
-      const orderResult = await orderRes.json();
-      if (!orderRes.ok || !orderResult?.booking?.id) {
-        throw new Error(orderResult?.error || 'Failed to save order');
-      }
-
-      navigate('/success', { state: { order: orderResult.booking } });
+      navigate('/success', { state: { order: submission.record, submissionMode: submission.mode } });
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Order failed. Please try again.');

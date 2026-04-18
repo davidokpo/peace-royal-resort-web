@@ -7,11 +7,11 @@
   "private": true,
 
   "scripts": {
-    "dev": "concurrently --kill-others --raw \"pnpm --filter web dev\" \"pnpm --filter api dev\"",
-    "build": "pnpm --filter web build",
-    "vercel-build": "pnpm --filter web build",
-    "start": "node apps/api/src/main.js",
-    "lint": "pnpm --filter web lint && pnpm --filter api lint"
+    "dev": "concurrently --kill-others --raw \"npm run dev --workspace apps/web\" \"npm run dev --workspace api\"",
+    "build": "npm run build --workspace apps/web",
+    "vercel-build": "npm run build --workspace apps/web",
+    "start": "node api/src/main.js",
+    "lint": "npm run lint --workspace apps/web && npm run lint --workspace api"
   },
 
   "devDependencies": {
@@ -22,7 +22,8 @@
 
   "workspaces": [
 
-    "apps/*"
+    "apps/*",
+    "api"
 
   ]
 

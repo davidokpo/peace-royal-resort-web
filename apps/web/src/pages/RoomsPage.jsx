@@ -14,6 +14,7 @@ import Footer from '@/components/Footer.jsx';
 import MediaSlideshow from '@/components/MediaSlideshow.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
+import { submitBookingRequest } from '@/lib/bookingSubmission.js';
 
 const RoomsPage = () => {
   const navigate = useNavigate();
@@ -84,35 +85,35 @@ const RoomsPage = () => {
     setLoading(true);
 
     try {
-      // Logic to find the API based on environment
-      const API_BASE = import.meta.env.VITE_API_URL || 'https://peace-royal-resort.vercel.app/api';
-      
-      const response = await fetch(`${API_BASE}/bookings/intake`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          total_price: calculateTotal(),
-          type: 'room',
-          // File names can't be sent as JSON easily, so we send the name
-          identity_document_name: formData.identity_document?.name || 'No file uploaded'
-        }),
+      const requestData = {
+        ...formData,
+        total_price: calculateTotal(),
+        type: 'room',
+        identity_document_name: formData.identity_document?.name || 'No file uploaded'
+      };
+
+      const submission = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
+          bookingType: 'room',
+          data: requestData,
+        },
+        fallbackRecord: requestData,
       });
 
-      const data = await response.json();
+      toast.success(
+        submission.mode === 'api'
+          ? 'Booking recorded successfully!'
+          : 'Booking saved. Please contact the hotel to confirm while online sync is being connected.',
+      );
 
-      if (data.success) {
-        toast.success('Booking recorded successfully!');
-        // Navigate to success/booked page
-        navigate('/booked', { 
-          state: { 
-            booking: data.booking,
-            message: "Your sanctuary at Peace Royal is reserved." 
-          } 
-        });
-      } else {
-        toast.error(data.message || 'Booking failed to save.');
-      }
+      navigate('/success', {
+        state: {
+          booking: submission.record,
+          submissionMode: submission.mode,
+          message: 'Your sanctuary at Peace Royal is reserved.',
+        },
+      });
     } catch (error) {
       console.error('Submission error:', error);
       toast.error('Network Error: Could not reach the server. Please check your connection.');

@@ -1,6 +1,6 @@
 export const HOTEL_CONTACT = {
-  phoneDisplay: '+234 800 000 0000',
-  phoneHref: 'tel:+2348000000000',
+  phoneDisplay: '09061967954',
+  phoneHref: 'tel:+2349061967954',
   email: 'info@peaceroyalresort.com',
   address: 'Opposite Candle Stick School, Gwarimpa, Abuja',
   mapUrl: 'https://maps.google.com/?q=Gwarimpa+Abuja',

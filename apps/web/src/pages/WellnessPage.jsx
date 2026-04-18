@@ -9,11 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import apiServerClient from '@/lib/apiServerClient';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
+import { submitBookingRequest } from '@/lib/bookingSubmission.js';
 
 const packages = [
   {
@@ -134,21 +134,16 @@ const WellnessPage = () => {
         total_price: total,
       };
 
-      const bookingRes = await apiServerClient.fetch('/bookings/intake', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const submission = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
           bookingType: 'wellness',
           data: bookingData,
-        }),
+        },
+        fallbackRecord: bookingData,
       });
 
-      const bookingResult = await bookingRes.json();
-      if (!bookingRes.ok || !bookingResult?.booking?.id) {
-        throw new Error(bookingResult?.error || 'Failed to save booking');
-      }
-
-      navigate('/success', { state: { booking: bookingResult.booking } });
+      navigate('/success', { state: { booking: submission.record, submissionMode: submission.mode } });
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Booking failed. Try again.');
