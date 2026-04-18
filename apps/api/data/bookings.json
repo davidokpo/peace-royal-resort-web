@@ -1,0 +1,45 @@
+{
+  "bookings": [
+    {
+      "id": "ROOM-1776452861595-5072QH",
+      "createdAt": "2026-04-17T19:07:41.595Z",
+      "booking_type": "room",
+      "guest_name": "David",
+      "email": "davidokpo7@gmail.com",
+      "phone": "+2349061945935",
+      "check_in_date": "2027-01-02",
+      "check_out_date": "2027-01-04",
+      "room_type": "Executive Suite",
+      "special_requests": "",
+      "identity_document_name": "1000790790_3bea4cf49b6b0d521e2427aabc07e85d-18_05_2025, 23_47_11.jpg",
+      "booking_status": "pending",
+      "total_price": 60000
+    },
+    {
+      "id": "CAFE-1776453124073-41HPCM",
+      "createdAt": "2026-04-17T19:12:04.073Z",
+      "booking_type": "cafe",
+      "customer_name": "John",
+      "email": "johnpapi@gmail.com",
+      "phone": "0906345738",
+      "beverage_items": [
+        {
+          "id": 1,
+          "name": "Chamomile Tea",
+          "price": 1200,
+          "quantity": 1
+        }
+      ],
+      "allergies": "none",
+      "special_requests": "None",
+      "delivery_type": "delivery",
+      "order_status": "pending",
+      "total_price": 1200,
+      "friday_game_night": false,
+      "board_game_selection": "",
+      "player_count": null,
+      "game_time_slot": "",
+      "reserved_table_number": ""
+    }
+  ]
+}
