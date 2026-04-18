@@ -3,7 +3,7 @@
   "public": true,
   "functions": {
     "api/src/main.js": {
-      "runtime": "vercel-node@latest"
+      "runtime": "nodejs20.x"
     }
   },
   "rewrites": [
