@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle, Home, FileText } from 'lucide-react';
@@ -7,10 +7,28 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import { HOTEL_CONTACT } from '@/config/siteContent.js';
+import { readPendingPayment, storePendingPayment } from '@/lib/paymentCheckout';
 
 const PaymentSuccess = () => {
   const location = useLocation();
-  const [data] = useState(location.state || null);
+  const [data, setData] = useState(location.state || readPendingPayment() || null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const paymentReference = params.get('reference') || params.get('trxref');
+    const baseState = location.state || readPendingPayment() || null;
+
+    if (!baseState) {
+      return;
+    }
+
+    const nextState = paymentReference
+      ? { ...baseState, paymentReference }
+      : baseState;
+
+    setData(nextState);
+    storePendingPayment(nextState);
+  }, [location.search, location.state]);
 
   const booking = data?.booking;
   const order = data?.order;
@@ -69,16 +87,16 @@ const PaymentSuccess = () => {
         ]
       };
     }
-    if (booking?.eventType || booking?.customerName) {
+    if (booking?.eventType || booking?.customerName || booking?.event_type || booking?.guest_count) {
       return {
         type: 'Garden Booking',
         items: [
-          { label: 'Customer name', value: booking.customerName },
-          { label: 'Event type', value: booking.eventType },
-          { label: 'Guests', value: booking.guestCount },
-          { label: 'Preferred date', value: booking.preferredDate },
-          { label: 'Preferred time', value: booking.preferredTime },
-          { label: 'Amount', value: `N${booking.totalPrice?.toLocaleString()}` }
+          { label: 'Customer name', value: booking.customerName || booking.customer_name || booking.guest_name || 'N/A' },
+          { label: 'Event type', value: booking.eventType || booking.event_type || 'N/A' },
+          { label: 'Guests', value: booking.guestCount || booking.guest_count || 'N/A' },
+          { label: 'Preferred date', value: booking.preferredDate || booking.preferred_date || 'N/A' },
+          { label: 'Preferred time', value: booking.preferredTime || booking.preferred_time || 'N/A' },
+          { label: 'Amount', value: `N${(booking.totalPrice || booking.total_price || 0).toLocaleString()}` }
         ]
       };
     }
@@ -129,6 +147,12 @@ const PaymentSuccess = () => {
                     <span className="text-muted-foreground">Reference number:</span>
                     <span className="font-semibold text-foreground text-right">{booking?.id || order?.id || 'N/A'}</span>
                   </div>
+                  {data?.paymentReference ? (
+                    <div className="flex justify-between py-2 border-b border-border gap-4">
+                      <span className="text-muted-foreground">Payment reference:</span>
+                      <span className="font-semibold text-foreground text-right">{data.paymentReference}</span>
+                    </div>
+                  ) : null}
                   {details.items.map((item, index) => (
                     <div key={index} className="flex justify-between py-2 border-b border-border gap-4">
                       <span className="text-muted-foreground">{item.label}:</span>

@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import pb from '@/lib/pocketbaseClient';
-import apiServerClient from '@/lib/apiServerClient';
+import { submitBookingRequest } from '@/lib/bookingSubmission';
+import { redirectToCheckout } from '@/lib/paymentCheckout';
 
 const GardenPartyBookingForm = () => {
   const navigate = useNavigate();
@@ -57,24 +57,27 @@ const GardenPartyBookingForm = () => {
         total_price: PACKAGE_PRICE
       };
 
-      const record = await pb.collection('garden_bookings').create(bookingData, { $autoCancel: false });
-
-      const paymentResponse = await apiServerClient.fetch('/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: PACKAGE_PRICE,
-          currency: 'ngn',
-          metadata: { bookingId: record.id, type: 'garden_booking' }
-        })
+      const { mode, record } = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
+          bookingType: 'garden',
+          data: bookingData,
+        },
+        fallbackRecord: bookingData,
       });
 
-      if (!paymentResponse.ok) {
-        throw new Error('Payment initialization failed');
+      if (mode === 'local_backup') {
+        navigate('/payment-success', { state: { booking: record, submissionMode: mode } });
+        return;
       }
 
-      const paymentData = await paymentResponse.json();
-      navigate('/payment-success', { state: { booking: record, clientSecret: paymentData.clientSecret } });
+      await redirectToCheckout({
+        amount: PACKAGE_PRICE,
+        bookingId: record.id,
+        productName: `${formData.event_type} garden event`,
+        customerEmail: 'bookings@peaceroyalresort.com',
+        state: { booking: record, submissionMode: mode },
+      });
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Booking failed. Please try again.');

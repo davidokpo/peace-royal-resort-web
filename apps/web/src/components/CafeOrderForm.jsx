@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import pb from '@/lib/pocketbaseClient';
-import apiServerClient from '@/lib/apiServerClient';
+import { submitBookingRequest } from '@/lib/bookingSubmission';
+import { redirectToCheckout } from '@/lib/paymentCheckout';
 
 const beverageItems = [
   { id: 1, name: 'Chamomile Tea', price: 1200, description: 'Calming herbal tea perfect for evening relaxation', nightMode: true },
@@ -109,24 +109,27 @@ const CafeOrderForm = ({ isGameNight = false }) => {
         reserved_table_number: isFridayGameNight ? `TBL-${Math.floor(Math.random() * 20) + 1}` : ''
       };
 
-      const record = await pb.collection('cafe_orders').create(orderData, { $autoCancel: false });
-
-      const paymentResponse = await apiServerClient.fetch('/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: totalPrice,
-          currency: 'ngn',
-          metadata: { orderId: record.id, type: 'cafe_order' }
-        })
+      const { mode, record } = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
+          bookingType: 'cafe',
+          data: orderData,
+        },
+        fallbackRecord: orderData,
       });
 
-      if (!paymentResponse.ok) {
-        throw new Error('Payment initialization failed');
+      if (mode === 'local_backup') {
+        navigate('/payment-success', { state: { order: record, submissionMode: mode } });
+        return;
       }
 
-      const paymentData = await paymentResponse.json();
-      navigate('/payment-success', { state: { order: record, clientSecret: paymentData.clientSecret } });
+      await redirectToCheckout({
+        amount: totalPrice,
+        bookingId: record.id,
+        productName: isFridayGameNight ? 'Cafe order and game night' : 'Cafe order',
+        customerEmail: formData.email,
+        state: { order: record, submissionMode: mode },
+      });
     } catch (error) {
       console.error('Order error:', error);
       toast.error('Order failed. Please try again.');

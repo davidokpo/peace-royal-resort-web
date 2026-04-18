@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import pb from '@/lib/pocketbaseClient';
-import apiServerClient from '@/lib/apiServerClient';
+import { submitBookingRequest } from '@/lib/bookingSubmission';
+import { redirectToCheckout } from '@/lib/paymentCheckout';
 
 const RoomBookingForm = ({ roomType, price }) => {
   const navigate = useNavigate();
@@ -56,35 +56,51 @@ const RoomBookingForm = ({ roomType, price }) => {
       }
 
       const totalPrice = calculateTotal();
-      const formDataToSend = new FormData();
-      formDataToSend.append('guest_name', formData.guest_name);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('phone', formData.phone);
-      formDataToSend.append('check_in_date', formData.check_in_date);
-      formDataToSend.append('check_out_date', formData.check_out_date);
-      formDataToSend.append('room_type', formData.room_type);
-      formDataToSend.append('identity_document', formData.identity_document);
-      formDataToSend.append('booking_status', 'pending');
-      formDataToSend.append('total_price', totalPrice);
+      const uploadNote = formData.identity_document
+        ? `Identity document uploaded: ${formData.identity_document.name}`
+        : '';
 
-      const record = await pb.collection('room_bookings').create(formDataToSend, { $autoCancel: false });
-
-      const paymentResponse = await apiServerClient.fetch('/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: totalPrice,
-          currency: 'ngn',
-          metadata: { bookingId: record.id, type: 'room_booking' }
-        })
+      const { mode, record } = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
+          bookingType: 'room',
+          data: {
+            guest_name: formData.guest_name,
+            email: formData.email,
+            phone: formData.phone,
+            check_in_date: formData.check_in_date,
+            check_out_date: formData.check_out_date,
+            room_type: formData.room_type,
+            booking_status: 'pending',
+            total_price: totalPrice,
+            notes: uploadNote,
+          },
+        },
+        fallbackRecord: {
+          guest_name: formData.guest_name,
+          email: formData.email,
+          phone: formData.phone,
+          check_in_date: formData.check_in_date,
+          check_out_date: formData.check_out_date,
+          room_type: formData.room_type,
+          booking_status: 'pending',
+          total_price: totalPrice,
+          notes: uploadNote,
+        },
       });
 
-      if (!paymentResponse.ok) {
-        throw new Error('Payment initialization failed');
+      if (mode === 'local_backup') {
+        navigate('/payment-success', { state: { booking: record, submissionMode: mode } });
+        return;
       }
 
-      const paymentData = await paymentResponse.json();
-      navigate('/payment-success', { state: { booking: record, clientSecret: paymentData.clientSecret } });
+      await redirectToCheckout({
+        amount: totalPrice,
+        bookingId: record.id,
+        productName: `${formData.room_type} booking`,
+        customerEmail: formData.email,
+        state: { booking: record, submissionMode: mode },
+      });
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Booking failed. Please try again.');

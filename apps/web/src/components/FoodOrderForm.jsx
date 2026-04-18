@@ -8,8 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import pb from '@/lib/pocketbaseClient';
-import apiServerClient from '@/lib/apiServerClient';
+import { submitBookingRequest } from '@/lib/bookingSubmission';
+import { redirectToCheckout } from '@/lib/paymentCheckout';
 
 const menuItems = [
   { id: 1, name: 'Jollof Rice with Chicken', price: 3500, description: 'Spicy Nigerian jollof rice with grilled chicken' },
@@ -94,24 +94,27 @@ const FoodOrderForm = () => {
         total_price: totalPrice
       };
 
-      const record = await pb.collection('food_orders').create(orderData, { $autoCancel: false });
-
-      const paymentResponse = await apiServerClient.fetch('/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: totalPrice,
-          currency: 'ngn',
-          metadata: { orderId: record.id, type: 'food_order' }
-        })
+      const { mode, record } = await submitBookingRequest({
+        endpoint: '/bookings/intake',
+        payload: {
+          bookingType: 'restaurant',
+          data: orderData,
+        },
+        fallbackRecord: orderData,
       });
 
-      if (!paymentResponse.ok) {
-        throw new Error('Payment initialization failed');
+      if (mode === 'local_backup') {
+        navigate('/payment-success', { state: { order: record, submissionMode: mode } });
+        return;
       }
 
-      const paymentData = await paymentResponse.json();
-      navigate('/payment-success', { state: { order: record, clientSecret: paymentData.clientSecret } });
+      await redirectToCheckout({
+        amount: totalPrice,
+        bookingId: record.id,
+        productName: 'Restaurant order',
+        customerEmail: formData.email,
+        state: { order: record, submissionMode: mode },
+      });
     } catch (error) {
       console.error('Order error:', error);
       toast.error('Order failed. Please try again.');
