@@ -17,7 +17,7 @@ import MediaSlideshow from '@/components/MediaSlideshow.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
 import { submitBookingRequest } from '@/lib/bookingSubmission.js';
-import { redirectToCheckout } from '@/lib/paymentCheckout.js';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout.js';
 
 const CafePage = () => {
   const navigate = useNavigate();
@@ -126,13 +126,18 @@ const CafePage = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: total,
         bookingId: submission.record.id,
         productName: isFriday ? 'Cafe order and game night' : 'Cafe order',
         customerEmail: formData.email,
         state: { order: submission.record, submissionMode: submission.mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Order failed. Please try again.');
@@ -270,7 +275,7 @@ const CafePage = () => {
 
               {/* Order Checkout Form - Shows for both regular cafe order and game night */}
               <div className="max-w-3xl mx-auto bg-card text-card-foreground rounded-3xl p-8 shadow-2xl">
-                <h3 className="heading-font text-2xl font-bold mb-6 text-center">Complete Your Checkout</h3>
+                <h3 className="heading-font text-2xl font-bold mb-6 text-center">Complete Your Order Request</h3>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -311,7 +316,7 @@ const CafePage = () => {
                   <div className="border-t border-border pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-lg">Total: <strong className="text-2xl text-primary font-bold">₦{calculateTotal().toLocaleString()}</strong></div>
                     <Button type="submit" disabled={loading} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white py-6 px-10 rounded-xl text-lg transition-all active:scale-95">
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isFriday ? 'Reserve Table & Pay' : 'Checkout Order')}
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isFriday ? 'Reserve Table' : 'Submit Order Request')}
                     </Button>
                   </div>
                 </form>

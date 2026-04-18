@@ -16,7 +16,7 @@ import MediaSlideshow from '@/components/MediaSlideshow.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
 import { submitBookingRequest } from '@/lib/bookingSubmission.js';
-import { redirectToCheckout } from '@/lib/paymentCheckout.js';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout.js';
 
 const GardenBookingPage = () => {
   const navigate = useNavigate();
@@ -66,13 +66,18 @@ const GardenBookingPage = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: PACKAGE_PRICE,
         bookingId: submission.record.id,
         productName: `${formData.event_type || 'Garden'} booking`,
         customerEmail: formData.customer_email,
         state: { booking: submission.record, submissionMode: submission.mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Booking failed. Please try again.');
@@ -235,7 +240,7 @@ const GardenBookingPage = () => {
                   </div>
 
                   <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl text-lg font-medium">
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Secure Date & Pay Deposit'}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Event Request'}
                   </Button>
                 </form>
               </div>

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { submitBookingRequest } from '@/lib/bookingSubmission';
-import { redirectToCheckout } from '@/lib/paymentCheckout';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout';
 
 const menuItems = [
   { id: 1, name: 'Jollof Rice with Chicken', price: 3500, description: 'Spicy Nigerian jollof rice with grilled chicken' },
@@ -108,13 +108,18 @@ const FoodOrderForm = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: totalPrice,
         bookingId: record.id,
         productName: 'Restaurant order',
         customerEmail: formData.email,
         state: { order: record, submissionMode: mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Order error:', error);
       toast.error('Order failed. Please try again.');
@@ -297,7 +302,7 @@ const FoodOrderForm = () => {
             Processing order...
           </>
         ) : (
-          'Proceed to payment'
+          'Submit Order Request'
         )}
       </Button>
     </form>

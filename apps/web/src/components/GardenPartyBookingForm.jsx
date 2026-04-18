@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { submitBookingRequest } from '@/lib/bookingSubmission';
-import { redirectToCheckout } from '@/lib/paymentCheckout';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout';
 
 const GardenPartyBookingForm = () => {
   const navigate = useNavigate();
@@ -24,19 +24,19 @@ const GardenPartyBookingForm = () => {
       pepperSoup: false,
       bbq: false,
       drinks: false,
-      other: false
-    }
+      other: false,
+    },
   });
 
   const PACKAGE_PRICE = 100000;
 
   const handleCateringChange = (key) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       catering_preferences: {
         ...prev.catering_preferences,
-        [key]: !prev.catering_preferences[key]
-      }
+        [key]: !prev.catering_preferences[key],
+      },
     }));
   };
 
@@ -54,7 +54,7 @@ const GardenPartyBookingForm = () => {
         catering_preferences: formData.catering_preferences,
         booking_status: 'pending',
         payment_status: 'pending',
-        total_price: PACKAGE_PRICE
+        total_price: PACKAGE_PRICE,
       };
 
       const { mode, record } = await submitBookingRequest({
@@ -71,13 +71,18 @@ const GardenPartyBookingForm = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: PACKAGE_PRICE,
         bookingId: record.id,
         productName: `${formData.event_type} garden event`,
         customerEmail: 'bookings@peaceroyalresort.com',
         state: { booking: record, submissionMode: mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Booking failed. Please try again.');
@@ -91,7 +96,7 @@ const GardenPartyBookingForm = () => {
       <div className="glass-panel-light rounded-2xl p-6 space-y-6">
         <div className="text-center mb-6">
           <h2 className="heading-font text-2xl font-bold text-foreground">Private Garden Event</h2>
-          <p className="text-muted-foreground">Package Price: ₦{PACKAGE_PRICE.toLocaleString()}</p>
+          <p className="text-muted-foreground">Package Price: N{PACKAGE_PRICE.toLocaleString()}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -116,7 +121,7 @@ const GardenPartyBookingForm = () => {
               type="number"
               min="1"
               value={formData.guest_count}
-              onChange={(e) => setFormData({ ...formData, guest_count: parseInt(e.target.value) || 1 })}
+              onChange={(e) => setFormData({ ...formData, guest_count: parseInt(e.target.value, 10) || 1 })}
               required
               className="mt-1 text-gray-900"
             />
@@ -196,7 +201,7 @@ const GardenPartyBookingForm = () => {
             Processing booking...
           </>
         ) : (
-          'Proceed to Payment (₦100,000)'
+          'Submit Booking Request'
         )}
       </Button>
     </form>

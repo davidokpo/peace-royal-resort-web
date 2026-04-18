@@ -15,7 +15,7 @@ import MediaSlideshow from '@/components/MediaSlideshow.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
 import { submitBookingRequest } from '@/lib/bookingSubmission.js';
-import { redirectToCheckout } from '@/lib/paymentCheckout.js';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout.js';
 
 const RoomsPage = () => {
   const navigate = useNavigate();
@@ -125,7 +125,8 @@ const RoomsPage = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: totalPrice,
         bookingId: submission.record.id,
         productName: `${formData.room_type} booking`,
@@ -136,6 +137,10 @@ const RoomsPage = () => {
           message: 'Your sanctuary at Peace Royal is reserved.',
         },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Submission error:', error);
       toast.error('Checkout could not be started. Please try again.');
@@ -218,7 +223,7 @@ const RoomsPage = () => {
               <div className="text-center mb-10">
                 <BedDouble className="w-10 h-10 mx-auto text-primary mb-4" />
                 <h2 className="heading-font text-3xl font-bold text-foreground">Secure Your Booking</h2>
-                <p className="text-muted-foreground">Payment required to guarantee reservation.</p>
+                <p className="text-muted-foreground">Submit your stay request and our team will confirm the next step.</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl mx-auto">
@@ -280,13 +285,13 @@ const RoomsPage = () => {
                       <span className="font-bold text-foreground">₦{calculateTotal().toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><ShieldCheck className="w-4 h-4" /> Secure payment via Paystack</span>
+                      <span className="flex items-center gap-1"><ShieldCheck className="w-4 h-4" /> Booking request stored securely</span>
                     </div>
                   </div>
                 )}
 
                 <Button type="submit" disabled={loading} className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground py-6 text-lg rounded-xl transition-all">
-                  {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</> : 'Proceed to Checkout'}
+                  {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</> : 'Submit Booking Request'}
                 </Button>
               </form>
             </motion.div>

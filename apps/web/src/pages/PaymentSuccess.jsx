@@ -48,8 +48,8 @@ const PaymentSuccess = () => {
           { label: 'Room type', value: booking.room_type },
           { label: 'Check-in', value: new Date(booking.check_in_date).toLocaleDateString() },
           { label: 'Check-out', value: new Date(booking.check_out_date).toLocaleDateString() },
-          { label: 'Amount', value: `N${booking.total_price?.toLocaleString()}` }
-        ]
+          { label: 'Amount', value: `N${booking.total_price?.toLocaleString()}` },
+        ],
       };
     }
     if (order?.menu_items) {
@@ -59,8 +59,8 @@ const PaymentSuccess = () => {
           { label: 'Customer name', value: order.customer_name },
           { label: 'Delivery type', value: order.delivery_type },
           { label: 'Order status', value: order.order_status },
-          { label: 'Amount', value: `N${order.total_price?.toLocaleString()}` }
-        ]
+          { label: 'Amount', value: `N${order.total_price?.toLocaleString()}` },
+        ],
       };
     }
     if (order?.beverage_items) {
@@ -70,8 +70,8 @@ const PaymentSuccess = () => {
           { label: 'Customer name', value: order.customer_name },
           { label: 'Order type', value: order.delivery_type },
           { label: 'Order status', value: order.order_status },
-          { label: 'Amount', value: `N${order.total_price?.toLocaleString()}` }
-        ]
+          { label: 'Amount', value: `N${order.total_price?.toLocaleString()}` },
+        ],
       };
     }
     if (booking?.class_type) {
@@ -83,8 +83,8 @@ const PaymentSuccess = () => {
           { label: 'Date', value: new Date(booking.booking_date).toLocaleDateString() },
           { label: 'Time', value: booking.booking_time },
           { label: 'Participants', value: booking.participants_count },
-          { label: 'Amount', value: `N${booking.total_price?.toLocaleString()}` }
-        ]
+          { label: 'Amount', value: `N${booking.total_price?.toLocaleString()}` },
+        ],
       };
     }
     if (booking?.eventType || booking?.customerName || booking?.event_type || booking?.guest_count) {
@@ -96,8 +96,8 @@ const PaymentSuccess = () => {
           { label: 'Guests', value: booking.guestCount || booking.guest_count || 'N/A' },
           { label: 'Preferred date', value: booking.preferredDate || booking.preferred_date || 'N/A' },
           { label: 'Preferred time', value: booking.preferredTime || booking.preferred_time || 'N/A' },
-          { label: 'Amount', value: `N${(booking.totalPrice || booking.total_price || 0).toLocaleString()}` }
-        ]
+          { label: 'Amount', value: `N${(booking.totalPrice || booking.total_price || 0).toLocaleString()}` },
+        ],
       };
     }
 
@@ -174,7 +174,7 @@ const PaymentSuccess = () => {
                     <span>
                       {isLocalBackup
                         ? `Call ${HOTEL_CONTACT.phoneDisplay} or email ${HOTEL_CONTACT.email} so the team can confirm this saved request manually`
-                        : 'Our team will contact you shortly to confirm arrangements and payment options'}
+                        : 'Our team will contact you shortly to confirm arrangements and the next step'}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

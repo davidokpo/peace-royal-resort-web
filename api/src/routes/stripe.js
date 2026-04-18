@@ -107,48 +107,56 @@ router.post('/transfer-recipient', requireAdminKey, createTransferRecipient);
 router.post('/opay-recipient', requireAdminKey, createTransferRecipient);
 
 router.post('/create-checkout', async (req, res) => {
-  const { amount, productName, successUrl, bookingId, customerEmail } = req.body;
+  try {
+    const { amount, productName, successUrl, bookingId, customerEmail } = req.body;
 
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ error: 'Amount must be a positive number' });
-  }
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number' });
+    }
 
-  if (!productName || !successUrl || !bookingId || !customerEmail) {
-    return res.status(400).json({ error: 'productName, successUrl, bookingId and customerEmail are required' });
-  }
+    if (!productName || !successUrl || !bookingId || !customerEmail) {
+      return res.status(400).json({ error: 'productName, successUrl, bookingId and customerEmail are required' });
+    }
 
-  if (!PAYSTACK_SECRET_KEY) {
-    return res.status(500).json({ error: 'Paystack secret key is not configured on the server' });
-  }
+    if (!PAYSTACK_SECRET_KEY) {
+      return res.status(500).json({ error: 'Paystack secret key is not configured on the server' });
+    }
 
-  const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      amount: Math.round(amount * 100),
-      email: customerEmail,
-      currency: 'NGN',
-      callback_url: successUrl,
-      metadata: {
-        bookingId,
-        productName,
+    const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
       },
-    }),
-  });
+      body: JSON.stringify({
+        amount: Math.round(amount * 100),
+        email: customerEmail,
+        currency: 'NGN',
+        callback_url: successUrl,
+        metadata: {
+          bookingId,
+          productName,
+        },
+      }),
+    });
 
-  const payload = await response.json();
-  if (!response.ok || !payload?.status || !payload?.data?.authorization_url) {
-    logger.error('Paystack initialization failed:', payload);
-    return res.status(400).json({ error: payload?.message || 'Failed to initialize Paystack checkout' });
+    const payload = await response.json();
+    if (!response.ok || !payload?.status || !payload?.data?.authorization_url) {
+      logger.error('Paystack initialization failed:', payload);
+      return res.status(400).json({ error: payload?.message || 'Failed to initialize Paystack checkout' });
+    }
+
+    return res.json({
+      url: payload.data.authorization_url,
+      reference: payload.data.reference,
+    });
+  } catch (error) {
+    logger.error('Paystack checkout request crashed:', error.message);
+    return res.status(500).json({
+      error: 'Unable to reach Paystack checkout service',
+      detail: error.message,
+    });
   }
-
-  return res.json({
-    url: payload.data.authorization_url,
-    reference: payload.data.reference,
-  });
 });
 
 router.post('/webhook', async (req, res) => {

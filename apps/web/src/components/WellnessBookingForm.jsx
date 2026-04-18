@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { submitBookingRequest } from '@/lib/bookingSubmission';
-import { redirectToCheckout } from '@/lib/paymentCheckout';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout';
 
 const classTypes = [
   { value: 'Yoga', label: 'Yoga Class', price: 5000, description: 'Morning yoga session with certified instructor' },
@@ -74,13 +74,18 @@ const WellnessBookingForm = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: totalPrice,
         bookingId: record.id,
         productName: `${formData.class_type} wellness booking`,
         customerEmail: formData.email,
         state: { booking: record, submissionMode: mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Booking failed. Please try again.');
@@ -228,7 +233,7 @@ const WellnessBookingForm = () => {
             Processing booking...
           </>
         ) : (
-          'Proceed to payment'
+          'Submit Booking Request'
         )}
       </Button>
     </form>

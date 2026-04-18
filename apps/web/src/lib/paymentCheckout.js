@@ -1,6 +1,7 @@
 import apiServerClient from './apiServerClient';
 
 const PENDING_PAYMENT_KEY = 'peace-royal-resort-pending-payment';
+const PAYMENTS_ENABLED = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
 
 export const storePendingPayment = (state) => {
   if (typeof window === 'undefined') {
@@ -58,4 +59,44 @@ export const redirectToCheckout = async ({
   });
 
   window.location.assign(result.url);
+};
+
+export const startCheckoutOrShowPending = async ({
+  navigate,
+  pendingPath = '/payment-success',
+  ...checkoutArgs
+}) => {
+  if (!PAYMENTS_ENABLED) {
+    const successState = {
+      ...checkoutArgs.state,
+      checkoutStatus: 'disabled',
+    };
+
+    storePendingPayment(successState);
+    navigate(pendingPath, { state: successState });
+
+    return {
+      started: true,
+      skipped: true,
+    };
+  }
+
+  try {
+    await redirectToCheckout(checkoutArgs);
+    return { started: true };
+  } catch (error) {
+    const pendingState = {
+      ...checkoutArgs.state,
+      checkoutStatus: 'pending',
+      checkoutError: error.message || 'Payment initialization failed',
+    };
+
+    storePendingPayment(pendingState);
+    navigate(pendingPath, { state: pendingState });
+
+    return {
+      started: false,
+      error,
+    };
+  }
 };

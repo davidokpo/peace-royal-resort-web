@@ -15,7 +15,7 @@ import Footer from '@/components/Footer.jsx';
 import SidebarNavigation from '@/components/SidebarNavigation.jsx';
 import { HOTEL_IMAGES } from '@/config/siteContent.js';
 import { submitBookingRequest } from '@/lib/bookingSubmission.js';
-import { redirectToCheckout } from '@/lib/paymentCheckout.js';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout.js';
 
 const RestaurantPage = () => {
   const navigate = useNavigate();
@@ -109,13 +109,18 @@ const RestaurantPage = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: total,
         bookingId: submission.record.id,
         productName: 'Restaurant order',
         customerEmail: formData.email,
         state: { order: submission.record, submissionMode: submission.mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Order submission failed. Please try again.');
@@ -272,7 +277,7 @@ const RestaurantPage = () => {
                     <span className="text-2xl font-bold text-secondary">₦{calculateTotal().toLocaleString()}</span>
                   </div>
                   <Button type="submit" disabled={loading || calculateTotal() === 0} className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground py-6 text-lg rounded-xl transition-all">
-                    {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</> : 'Proceed to Checkout'}
+                  {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</> : 'Submit Order Request'}
                   </Button>
                 </div>
               </form>

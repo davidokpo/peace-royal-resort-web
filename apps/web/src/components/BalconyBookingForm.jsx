@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { submitBookingRequest } from '@/lib/bookingSubmission';
-import { redirectToCheckout } from '@/lib/paymentCheckout';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout';
 
 const breakfastPackages = [
   { name: 'Therapeutic Morning Tea + Pastries', price: 8500 },
@@ -69,13 +69,18 @@ const BalconyBookingForm = () => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: totalPrice,
         bookingId: record.id,
         productName: 'Balcony breakfast booking',
         customerEmail: formData.email,
         state: { booking: record, submissionMode: mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Booking failed. Please try again.');
@@ -221,7 +226,7 @@ const BalconyBookingForm = () => {
             Processing booking...
           </>
         ) : (
-          'Proceed to Payment'
+          'Submit Booking Request'
         )}
       </Button>
     </form>

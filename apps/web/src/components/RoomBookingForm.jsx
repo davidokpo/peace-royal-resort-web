@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { submitBookingRequest } from '@/lib/bookingSubmission';
-import { redirectToCheckout } from '@/lib/paymentCheckout';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout';
 
 const RoomBookingForm = ({ roomType, price }) => {
   const navigate = useNavigate();
@@ -94,13 +94,18 @@ const RoomBookingForm = ({ roomType, price }) => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: totalPrice,
         bookingId: record.id,
         productName: `${formData.room_type} booking`,
         customerEmail: formData.email,
         state: { booking: record, submissionMode: mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Booking error:', error);
       toast.error('Booking failed. Please try again.');
@@ -114,7 +119,7 @@ const RoomBookingForm = ({ roomType, price }) => {
       <div className="glass-panel-light rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
           <ShieldCheck className="w-5 h-5 text-primary" />
-          <span className="font-medium">Payment required before service. Secure booking guaranteed.</span>
+          <span className="font-medium">Submit your stay request now and our team will confirm the booking with you.</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,7 +253,7 @@ const RoomBookingForm = ({ roomType, price }) => {
             Processing booking...
           </>
         ) : (
-          'Proceed to payment'
+          'Submit Booking Request'
         )}
       </Button>
     </form>

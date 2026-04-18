@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { submitBookingRequest } from '@/lib/bookingSubmission';
-import { redirectToCheckout } from '@/lib/paymentCheckout';
+import { startCheckoutOrShowPending } from '@/lib/paymentCheckout';
 
 const beverageItems = [
   { id: 1, name: 'Chamomile Tea', price: 1200, description: 'Calming herbal tea perfect for evening relaxation', nightMode: true },
@@ -123,13 +123,18 @@ const CafeOrderForm = ({ isGameNight = false }) => {
         return;
       }
 
-      await redirectToCheckout({
+      const checkout = await startCheckoutOrShowPending({
+        navigate,
         amount: totalPrice,
         bookingId: record.id,
         productName: isFridayGameNight ? 'Cafe order and game night' : 'Cafe order',
         customerEmail: formData.email,
         state: { order: record, submissionMode: mode },
       });
+
+      if (!checkout.started) {
+        toast.warning('Your request was saved, but payment could not be started automatically. Please contact the hotel to complete payment.');
+      }
     } catch (error) {
       console.error('Order error:', error);
       toast.error('Order failed. Please try again.');
@@ -367,7 +372,7 @@ const CafeOrderForm = ({ isGameNight = false }) => {
             Processing order...
           </>
         ) : (
-          'Proceed to payment'
+          'Submit Order Request'
         )}
       </Button>
     </form>
