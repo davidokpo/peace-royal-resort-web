@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "public": true,
+  "functions": {
+    "api/src/main.js": {
+      "runtime": "vercel-node@latest"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
