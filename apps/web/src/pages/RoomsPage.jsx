@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import apiServerClient from '@/lib/apiServerClient';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import MediaSlideshow from '@/components/MediaSlideshow.jsx';
@@ -75,10 +74,7 @@ const RoomsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.identity_document) {
-      toast.error('Identity document is required for booking security.');
-      return;
-    }
+    
     const nights = calculateNights();
     if (nights <= 0) {
       toast.error('Check-out date must be after check-in date.');
@@ -86,37 +82,41 @@ const RoomsPage = () => {
     }
 
     setLoading(true);
+
     try {
-      const totalPrice = calculateTotal();
-      const bookingRes = await apiServerClient.fetch('/bookings/intake', {
+      // Logic to find the API based on environment
+      const API_BASE = import.meta.env.VITE_API_URL || 'https://peace-royal-resort.vercel.app/api';
+      
+      const response = await fetch(`${API_BASE}/bookings/intake`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bookingType: 'room',
-          data: {
-            guest_name: formData.guest_name,
-            email: formData.email,
-            phone: formData.phone,
-            check_in_date: formData.check_in_date,
-            check_out_date: formData.check_out_date,
-            room_type: formData.room_type,
-            special_requests: formData.special_requests,
-            identity_document_name: formData.identity_document?.name || '',
-            booking_status: 'pending',
-            total_price: totalPrice,
-          },
+          ...formData,
+          total_price: calculateTotal(),
+          type: 'room',
+          // File names can't be sent as JSON easily, so we send the name
+          identity_document_name: formData.identity_document?.name || 'No file uploaded'
         }),
       });
 
-      const bookingData = await bookingRes.json();
-      if (!bookingRes.ok || !bookingData?.booking?.id) {
-        throw new Error(bookingData?.error || 'Failed to save booking');
-      }
+      const data = await response.json();
 
-      navigate('/success', { state: { booking: bookingData.booking } });
+      if (data.success) {
+        toast.success('Booking recorded successfully!');
+        // Navigate to success/booked page
+        navigate('/booked', { 
+          state: { 
+            booking: data.booking,
+            message: "Your sanctuary at Peace Royal is reserved." 
+          } 
+        });
+      } else {
+        toast.error(data.message || 'Booking failed to save.');
+      }
     } catch (error) {
-      console.error(error);
-      toast.error(error.message || 'Booking failed. Please check your inputs and try again.');
+      console.error('Submission error:', error);
+      toast.error('Network Error: Could not reach the server. Please check your connection.');
+    } finally {
       setLoading(false);
     }
   };
@@ -277,4 +277,3 @@ const RoomsPage = () => {
 };
 
 export default RoomsPage;
-
