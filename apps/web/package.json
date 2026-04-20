@@ -6,7 +6,7 @@
     "scripts": {
       "dev": "vite --host :: --port 3000",
       "build": "vite build",
-      "vercel-build": "vite build --outDir ../../dist",
+      "vercel-build": "vite build",
       "start": "vite preview --outDir ../../dist/apps/web --host :: --port 3000",
       "lint": "eslint . --quiet",
       "lint:warn": "eslint ."
