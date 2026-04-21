@@ -6,13 +6,24 @@
 
   "private": true,
   "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.1",
+    "googleapis": "^171.4.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "nodemailer": "^7.0.10",
+    "pocketbase": "^0.26.8"
+  },
 
   "scripts": {
-    "dev": "concurrently --kill-others --raw \"npm run dev --workspace apps/web\" \"npm run dev --workspace api\"",
+    "dev": "concurrently --kill-others --raw \"npm run dev --workspace apps/web\" \"npm run dev --workspace server\"",
     "build": "npm run build --workspace apps/web",
     "vercel-build": "npm run vercel-build --workspace apps/web",
-    "start": "node api/src/main.js",
-    "lint": "npm run lint --workspace apps/web && npm run lint --workspace api"
+    "start": "node server/src/main.js",
+    "lint": "npm run lint --workspace apps/web && npm run lint --workspace server"
   },
 
   "devDependencies": {
@@ -24,7 +35,7 @@
   "workspaces": [
 
     "apps/*",
-    "api"
+    "server"
 
   ]
 
